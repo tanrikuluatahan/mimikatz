@@ -60,6 +60,12 @@ KULL_M_PATCH_GENERIC LsaSrvReferences[] = {
 PLIST_ENTRY LogonSessionList = NULL;
 PULONG LogonSessionListCount = NULL;
 
+// approach 2 uses this
+//BOOL kuhl_m_sekurlsa_utils_search(PKUHL_M_SEKURLSA_CONTEXT cLsass, PKUHL_M_SEKURLSA_LIB pLib)
+//{
+//	PVOID* pLogonSessionListCount = (cLsass->osContext.BuildNumber < KULL_M_WIN_BUILD_2K3) ? NULL : ((PVOID*)&LogonSessionListCount);
+//	return kuhl_m_sekurlsa_utils_search_generic(cLsass, pLib, LsaSrvReferences, ARRAYSIZE(LsaSrvReferences), (PVOID*)&LogonSessionList, pLogonSessionListCount, NULL, NULL);
+//}
 
 BOOL kuhl_m_sekurlsa_utils_search(PKUHL_M_SEKURLSA_CONTEXT cLsass, PKUHL_M_SEKURLSA_LIB pLib)
 {
